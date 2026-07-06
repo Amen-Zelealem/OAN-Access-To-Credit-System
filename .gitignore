@@ -58,7 +58,6 @@ internal/
 .settings
 **/.vs
 
-**/.vscode/*
 !**/.vscode/tasks.json
 !**/.vscode/settings.template.json
 !**/.vscode/launch.template.json
@@ -154,6 +153,6 @@ next-env.d.ts
 
 # End of https://www.toptal.com/developers/gitignore/api/nextjs,macos
 
-.env
 .gemini
 .claude
+config.bat

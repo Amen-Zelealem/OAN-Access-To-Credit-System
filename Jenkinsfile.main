@@ -1,51 +1,126 @@
-stage('Deploy to Staging VM') {
-    steps {
-        withCredentials([
-            string(credentialsId: 'AWS_ACCOUNT_ID', variable: 'AWS_ACCOUNT_ID'),
-            sshUserPrivateKey(
-                credentialsId: 'backend-ssh-key',
-                keyFileVariable: 'SSH_KEY',
-                usernameVariable: 'SSH_USER'
-            )
-        ]) {
-            sh '''
-                # Copy docker-compose from workspace to staging VM
-                scp -i ${SSH_KEY} -o StrictHostKeyChecking=no \
-                    docker-compose.yaml \
-                    ${SSH_USER}@${BACKEND_IP}:/opt/oan_a2c_fe_main/docker-compose.yaml
+pipeline {
+    agent any
 
-                ssh -i ${SSH_KEY} \
-                -o StrictHostKeyChecking=no \
-                ${SSH_USER}@${BACKEND_IP} <<SSHEOF
+    environment {
+        AWS_REGION   = 'ap-south-1'
+        ECR_REPO     = 'oan-a2c-frontend'
+        BACKEND_IP   = '10.0.2.100'
+        API_BASE_URL = 'https://a2c-backend.oanstaging.com'
+    }
 
-                set -e
-                
-                cd /opt/oan_a2c_fe_main
+    stages {
+        stage('Checkout') {
+            steps { checkout scm }
+        }
 
+        stage('Build Image') {
+            steps {
+                withCredentials([string(credentialsId: 'AWS_ACCOUNT_ID', variable: 'AWS_ACCOUNT_ID')]) {
+                    sh '''
+                        IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}"
 
-                # Change container name to avoid conflict
-                sed -i 's/oan_a2c_frontend/oan_a2c_frontend_main/' docker-compose.yaml
+                        DOCKER_BUILDKIT=1 docker build \
+                          --build-arg API_BASE_URL=${API_BASE_URL} \
+                          --tag ${IMAGE_URI}:main-${BUILD_NUMBER} \
+                          --tag ${IMAGE_URI}:main \
+                          --no-cache .
 
-                cat > .env <<ENVEOF
+                        echo "Built: ${IMAGE_URI}:main-${BUILD_NUMBER}"
+                    '''
+                }
+            }
+        }
+
+        stage('Push to ECR') {
+            steps {
+                withCredentials([string(credentialsId: 'AWS_ACCOUNT_ID', variable: 'AWS_ACCOUNT_ID')]) {
+                    sh '''
+                        IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}"
+
+                        aws ecr get-login-password --region ${AWS_REGION} | \
+                        docker login --username AWS --password-stdin \
+                        ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+
+                        aws ecr describe-repositories \
+                          --repository-names ${ECR_REPO} \
+                          --region ${AWS_REGION} >/dev/null 2>&1 || \
+                        aws ecr create-repository \
+                          --repository-name ${ECR_REPO} \
+                          --region ${AWS_REGION}
+
+                        docker push ${IMAGE_URI}:main-${BUILD_NUMBER}
+                        docker push ${IMAGE_URI}:main
+
+                        echo "Pushed: ${IMAGE_URI}:main-${BUILD_NUMBER}"
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy to Staging VM') {
+            steps {
+                withCredentials([
+                    string(credentialsId: 'AWS_ACCOUNT_ID', variable: 'AWS_ACCOUNT_ID'),
+                    sshUserPrivateKey(
+                        credentialsId: 'backend-ssh-key',
+                        keyFileVariable: 'SSH_KEY',
+                        usernameVariable: 'SSH_USER'
+                    )
+                ]) {
+                    sh '''
+                        scp -i ${SSH_KEY} -o StrictHostKeyChecking=no \
+                            docker-compose.yaml \
+                            ${SSH_USER}@${BACKEND_IP}:/opt/oan_a2c_fe_main/docker-compose.yaml
+
+                        ssh -i ${SSH_KEY} \
+                        -o StrictHostKeyChecking=no \
+                        ${SSH_USER}@${BACKEND_IP} <<SSHEOF
+
+                        set -e
+                        cd /opt/oan_a2c_fe_main
+
+                        sed -i 's/3000:3000/3001:3000/' docker-compose.yaml
+                        sed -i 's/oan_a2c_frontend/oan_a2c_frontend_main/' docker-compose.yaml
+
+                        cat > .env <<ENVEOF
 ECR_IMAGE=${AWS_ACCOUNT_ID}.dkr.ecr.ap-south-1.amazonaws.com/oan-a2c-frontend:main-${BUILD_NUMBER}
-API_BASE_URL=https://a2c.oanstaging.com
+API_BASE_URL=https://a2c-backend.oanstaging.com
 ENVEOF
 
-                aws ecr get-login-password --region ap-south-1 | \
-                docker login --username AWS --password-stdin \
-                ${AWS_ACCOUNT_ID}.dkr.ecr.ap-south-1.amazonaws.com
+                        aws ecr get-login-password --region ap-south-1 | \
+                        docker login --username AWS --password-stdin \
+                        ${AWS_ACCOUNT_ID}.dkr.ecr.ap-south-1.amazonaws.com
 
-                docker compose pull
-                docker compose down || true
-                docker compose up -d
+                        docker compose pull
+                        docker compose down || true
+                        docker compose up -d
 
-                sleep 15
-                curl -sf http://localhost:3001 || echo "Warning: health check failed"
+                        sleep 15
+                        curl -sf http://localhost:3001 || echo "Warning: health check failed"
 
-                echo "=== Main Frontend deployed on port 3001 ==="
-                docker compose ps
+                        echo "=== Main Frontend deployed on port 3001 ==="
+                        docker compose ps
 SSHEOF
-            '''
+                    '''
+                }
+            }
         }
+
+        stage('Cleanup') {
+            steps {
+                withCredentials([string(credentialsId: 'AWS_ACCOUNT_ID', variable: 'AWS_ACCOUNT_ID')]) {
+                    sh '''
+                        IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}"
+                        docker rmi ${IMAGE_URI}:main-${BUILD_NUMBER} || true
+                        docker system prune -f || true
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        success { echo "Main frontend deployed successfully! Build: main-${BUILD_NUMBER}" }
+        failure { echo "Main frontend pipeline failed!" }
     }
 }
