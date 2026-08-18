@@ -20,6 +20,7 @@ export function InputField({
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       <input
+        autoComplete="off"
         {...props}
         className="w-full px-3 py-2.5 bg-white border border-[#D1D5DB] rounded-lg text-[14px] text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-all placeholder:text-[#9CA3AF]"
       />

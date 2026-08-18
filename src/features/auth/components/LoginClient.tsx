@@ -16,6 +16,7 @@ import { logoutUser } from '@/features/auth/api/authApi';
 import { ForgotPasswordModal } from '@/features/auth/components/ForgotPasswordModal';
 import { HavingTroubleModal } from '@/features/auth/components/HavingTroubleModal';
 import { clearAuthError, loginThunk, logout, selectAuthError, selectAuthStatus } from '@/features/auth/store/authSlice';
+import { useAutofillGuard } from '@/hooks/useAutofillGuard';
 import { AUTH_MESSAGES } from '@/lib/authMessages';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 
@@ -46,6 +47,8 @@ export function LoginClient() {
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [usernameReadOnly, unlockUsername] = useAutofillGuard();
+  const [passwordReadOnly, unlockPassword] = useAutofillGuard();
   // Sent to /api/auth/login, which uses it to pick the session lifetime (30 days
   // vs 24 hours). Until it was wired up the box rendered but was never read, so
   // every session got the same treatment whatever the person chose.
@@ -252,6 +255,8 @@ export function LoginClient() {
                         type="text"
                         placeholder="+251 911 234 567"
                         autoComplete="off"
+                        readOnly={usernameReadOnly}
+                        onFocus={unlockUsername}
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         required
@@ -270,6 +275,8 @@ export function LoginClient() {
                         type={isPasswordVisible ? 'text' : 'password'}
                         placeholder="•••••••"
                         autoComplete="new-password"
+                        readOnly={passwordReadOnly}
+                        onFocus={unlockPassword}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required

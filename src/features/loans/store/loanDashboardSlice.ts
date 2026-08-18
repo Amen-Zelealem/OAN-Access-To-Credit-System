@@ -107,6 +107,18 @@ interface LoanDashboardState {
   advancedFilters: AdvancedFilters;
 }
 
+// Shared by initialState and every "clear filters" reducer below, so the
+// three can't silently drift apart when a field is added to AdvancedFilters.
+const DEFAULT_ADVANCED_FILTERS: AdvancedFilters = {
+  status: [],
+  minLoan: null,
+  maxLoan: null,
+  type: [],
+  location: '',
+  dateFrom: '',
+  dateTo: '',
+};
+
 const initialState: LoanDashboardState = {
   rawActivityData: null,
   isLoading: false,
@@ -124,15 +136,7 @@ const initialState: LoanDashboardState = {
   tableStatusFilters: [],
   tableTypeFilters: [],
   pageSize: 10,
-  advancedFilters: {
-    status: [],
-    minLoan: null,
-    maxLoan: null,
-    type: [],
-    location: '',
-    dateFrom: '',
-    dateTo: '',
-  }
+  advancedFilters: { ...DEFAULT_ADVANCED_FILTERS },
 };
 
 const loanDashboardSlice = createSlice({
@@ -214,15 +218,20 @@ const loanDashboardSlice = createSlice({
       state.activityPage = 1;
     },
     clearAdvancedFilters: (state) => {
-      state.advancedFilters = {
-        status: [],
-        minLoan: null,
-        maxLoan: null,
-        type: [],
-        location: '',
-        dateFrom: '',
-        dateTo: '',
-      };
+      state.advancedFilters = { ...DEFAULT_ADVANCED_FILTERS };
+      state.activityPage = 1;
+    },
+    // The toolbar's "Clear Filters" needs to reset every independent filter
+    // surface (badges, column filters, advanced filters, search) in one go —
+    // clearAdvancedFilters alone left tableStatusFilters/tableTypeFilters/
+    // selectedStatuses/searchQuery untouched, so a bad value picked from a
+    // column filter survived a "clear" and kept the same broken request firing.
+    resetAllFilters: (state) => {
+      state.searchQuery = '';
+      state.selectedStatuses = [...ALL_STATUS_VALUES];
+      state.tableStatusFilters = [];
+      state.tableTypeFilters = [];
+      state.advancedFilters = { ...DEFAULT_ADVANCED_FILTERS };
       state.activityPage = 1;
     },
     setLoanSort: (state, action: PayloadAction<{ sortBy?: 'loan_amount' | 'creation'; sortOrder?: 'asc' | 'desc' }>) => {
@@ -294,6 +303,7 @@ export const {
   setPageSize,
   setAdvancedFilters,
   clearAdvancedFilters,
+  resetAllFilters,
   setLoanSort
 } = loanDashboardSlice.actions;
 

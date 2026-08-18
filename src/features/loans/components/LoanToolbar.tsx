@@ -1,7 +1,7 @@
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { Search, SlidersHorizontal } from 'lucide-react';
 import React, { useState } from 'react';
-import { clearAdvancedFilters, selectActiveTab, selectSearchQuery, selectTabCounts, setActiveTab, setSearchQuery } from '../store/loanDashboardSlice';
+import { resetAllFilters, selectActiveTab, selectSearchQuery, selectTabCounts, setActiveTab, setSearchQuery } from '../store/loanDashboardSlice';
 import LoanAdvancedFilters from './LoanAdvancedFilters';
 
 export default function LoanToolbar() {
@@ -14,6 +14,11 @@ export default function LoanToolbar() {
 
   const handleSearch = () => {
     dispatch(setSearchQuery(localSearch));
+  };
+
+  const handleClearFilters = () => {
+    setLocalSearch('');
+    dispatch(resetAllFilters());
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -67,7 +72,7 @@ export default function LoanToolbar() {
             <span className="sm:hidden">Filters</span>
           </button>
           <button
-            onClick={() => dispatch(clearAdvancedFilters())}
+            onClick={handleClearFilters}
             className="text-base font-semibold text-[#16A34A] transition hover:text-[#10883c] whitespace-nowrap"
           >
             Clear Filters

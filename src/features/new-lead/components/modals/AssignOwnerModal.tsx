@@ -187,7 +187,7 @@ export default function AssignOwnerModal({
           </div>
 
           {/* Footer */}
-          <div className="box-border flex flex-row justify-end items-center p-[24px] gap-[12px] w-[448px] h-[87px] border-t border-[#E5E7EB] bg-white absolute bottom-0">
+          <div className="box-border flex flex-row justify-end items-center p-[24px] gap-[12px] w-full h-[87px] border-t border-[#E5E7EB] bg-white">
             <div className="flex flex-row items-center p-0 gap-[12px] w-[224.86px] h-[40px] ml-auto">
               <button
                 onClick={onClose}

@@ -77,7 +77,7 @@ export function CreateAccountForm() {
       )}
 
       {/* Form Fields */}
-      <form className="space-y-4 mb-6" onSubmit={handleRegisterSubmit}>
+      <form className="space-y-4 mb-6" onSubmit={handleRegisterSubmit} autoComplete="off">
         {/* Full name */}
         <div>
           <label className="block text-[14px] font-bold text-gray-700 mb-1.5">
@@ -89,6 +89,7 @@ export function CreateAccountForm() {
             </div>
             <input
               type="text"
+              autoComplete="off"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="First and last name"
@@ -119,6 +120,7 @@ export function CreateAccountForm() {
             </div>
             <input
               type="tel"
+              autoComplete="off"
               maxLength={PHONE_NUMBER_MAX_LENGTH}
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
@@ -140,6 +142,7 @@ export function CreateAccountForm() {
             </div>
             <input
               type="email"
+              autoComplete="off"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter email id"
@@ -160,6 +163,7 @@ export function CreateAccountForm() {
             </div>
             <input
               type={isPasswordVisible ? 'text' : 'password'}
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"

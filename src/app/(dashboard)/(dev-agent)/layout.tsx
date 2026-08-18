@@ -2,6 +2,8 @@
 
 import { DashboardHeader } from '@/components/header/DashboardHeader';
 import Sidebar, { NavSection } from '@/components/Sidebar';
+import { selectAuthStatus } from '@/features/auth/store/authSlice';
+import { useAppSelector } from '@/store/hooks';
 import { LayoutDashboard, ListChecks, Users, FileText } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
@@ -53,6 +55,13 @@ export default function DevAgentLayout({ children }: { children: React.ReactNode
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const pathname = usePathname();
+  const authStatus = useAppSelector(selectAuthStatus);
+  // getMeThunk (dispatched on app mount) hasn't resolved yet — mounting
+  // DashboardHeader before then risks it hydrating after the session resolves
+  // client-side but before the server-rendered (unresolved) HTML is compared,
+  // which mismatches and forces a client rebuild that flashes the generic role
+  // name. Matches the same gate BankAdminLayout uses for the same reason.
+  const authResolved = authStatus === 'succeeded' || authStatus === 'failed';
 
   const filteredSections = navigationSections.map(section => {
     if (section.title === 'WORKFLOW') {
@@ -97,6 +106,10 @@ export default function DevAgentLayout({ children }: { children: React.ReactNode
     } else {
       setIsSidebarCollapsed(prev => !prev);
     }
+  }
+
+  if (!authResolved) {
+    return null;
   }
 
   return (

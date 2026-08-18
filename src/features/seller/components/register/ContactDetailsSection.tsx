@@ -41,6 +41,7 @@ export function ContactDetailsSection({ fields, onChange, isAgreed, setIsAgreed 
           </label>
           <input
             type="email"
+            autoComplete="off"
             value={fields.registered_email}
             onChange={(e) => onChange({ registered_email: e.target.value })}
             placeholder="Enter email address"
@@ -92,6 +93,7 @@ export function ContactDetailsSection({ fields, onChange, isAgreed, setIsAgreed 
             </div>
             <input
               type="tel"
+              autoComplete="off"
               maxLength={PHONE_NUMBER_MAX_LENGTH}
               placeholder="Enter Phone Number"
               value={fields.registered_phone.startsWith(selectedPhoneCode) ? fields.registered_phone.slice(selectedPhoneCode.length).trimStart() : fields.registered_phone}

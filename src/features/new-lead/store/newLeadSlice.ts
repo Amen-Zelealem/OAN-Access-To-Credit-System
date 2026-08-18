@@ -8,6 +8,7 @@ import {
     CreateLeadResponse, GetActivitiesResponse, GetCallDetailsResponse, GetLeadMetadataResponse, newLeadService,
     SpecificLeadAPI, UpdateLeadStatusResponse
 } from '../api/newLead.service';
+import { createLeadSchema } from '../schemas/lead.schema';
 import { clearForm, initializeLead } from './actions';
 import { fetchAssignmentInfoThunk } from './assignmentSlice';
 import { fetchLeadDetailsThunk } from './farmerSlice';
@@ -232,9 +233,18 @@ export const submitNewLeadThunk = createAsyncThunk<
   async (_, { getState, rejectWithValue }) => {
     try {
       const { draft } = (getState() as RootState).newLead;
+      // CreateLeadForm validates draft.phoneNumber against this same schema
+      // before dispatching, so reuse it here rather than re-deriving the
+      // sanitization by hand — the validated value and the sent value can't
+      // drift apart. LeadLayoutGrid's own submit path does not pre-validate,
+      // so fall back to the raw value (as before) rather than throwing when
+      // the schema rejects it; the backend remains the final validator for
+      // that path.
+      const parsed = createLeadSchema.safeParse({ phoneNumber: draft.phoneNumber });
+      const phoneNumber = parsed.success ? parsed.data.phoneNumber : draft.phoneNumber;
 
       const payload = {
-        phone_number: draft.phoneNumber,
+        phone_number: phoneNumber,
         first_name: draft.firstName,
         last_name: draft.lastName,
         email: draft.email,

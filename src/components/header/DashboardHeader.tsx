@@ -110,6 +110,12 @@ export function DashboardHeader({ onMenuClick, title = 'Dashboard', subtitle }: 
     }
   };
 
+  // DevAgentLayout, BankAgentLayout, and BankAdminLayout gate this header
+  // behind auth resolution, so officerName is always either the real name or
+  // genuinely absent by the time this renders for those callers. The farmer
+  // layout does not (unaddressed — same class of hydration flash bug as the
+  // one this component was fixed for elsewhere), so this component still
+  // can't assume auth has resolved on every render path.
   const userName = officerName ?? config.fallbackName;
   const institutionName = subtitle ?? bankName ?? `${config.fallbackName} Portal`;
 
