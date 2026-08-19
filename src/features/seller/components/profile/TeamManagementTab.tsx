@@ -252,7 +252,9 @@ export default function TeamManagementTab() {
             </div>
             <form onSubmit={handleInvite} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-1.5">Full Name</label>
+                <label className="block text-sm font-medium text-gray-900 mb-1.5">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
                 <input 
                   type="text" 
                   required
@@ -263,7 +265,9 @@ export default function TeamManagementTab() {
                 {inviteErrors.full_name && <p className="mt-1 text-xs text-red-500">{inviteErrors.full_name}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-1.5">Email Address</label>
+                <label className="block text-sm font-medium text-gray-900 mb-1.5">
+                  Email Address <span className="text-red-500">*</span>
+                </label>
                 <input 
                   type="email" 
                   required
@@ -283,7 +287,9 @@ export default function TeamManagementTab() {
                 {inviteErrors.role && <p className="mt-1 text-xs text-red-500">{inviteErrors.role}</p>}
               </div>
               <div>
-                <label htmlFor="invite-temp-password" className="block text-sm font-medium text-gray-900 mb-1.5">Temporary Password</label>
+                <label htmlFor="invite-temp-password" className="block text-sm font-medium text-gray-900 mb-1.5">
+                  Temporary Password <span className="text-red-500">*</span>
+                </label>
                 <div className="flex gap-2">
                   <input
                     id="invite-temp-password"

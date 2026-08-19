@@ -6,6 +6,7 @@ import { SetInitialPasswordForm } from '@/features/auth/components/SetInitialPas
 import type { UserKind } from '@/features/auth/rbac';
 import { clearAuthError, loginThunk, logout } from '@/features/auth/store/authSlice';
 import type { User as AuthUser } from '@/features/auth/types/auth.types';
+import { useAutofillGuard } from '@/hooks/useAutofillGuard';
 import { AUTH_MESSAGES } from '@/lib/authMessages';
 import { useAppDispatch } from '@/store/hooks';
 import { ArrowRight, CheckCircle2, Clock, Eye, EyeOff, Lock, User } from 'lucide-react';
@@ -46,6 +47,8 @@ export function PortalLoginForm({
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [usernameReadOnly, unlockUsername] = useAutofillGuard();
+  const [passwordReadOnly, unlockPassword] = useAutofillGuard();
   // Sent to /api/auth/login, which uses it to pick the session lifetime (30 days
   // vs 24 hours). Until it was wired up the box rendered but was never read, so
   // every session got the same treatment whatever the person chose.
@@ -183,6 +186,8 @@ export function PortalLoginForm({
               <input
                 type="text"
                 autoComplete="off"
+                readOnly={usernameReadOnly}
+                onFocus={unlockUsername}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder={usernamePlaceholder}
@@ -202,6 +207,8 @@ export function PortalLoginForm({
                 ref={passwordInputRef}
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
+                readOnly={passwordReadOnly}
+                onFocus={unlockPassword}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
