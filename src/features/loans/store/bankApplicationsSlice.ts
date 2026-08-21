@@ -325,7 +325,7 @@ const selectRowsData = createSelector([selectRaw], (raw) => {
       // name, which lives in its own column-sub-line and would match nothing.
       type: row.loan_type || 'Unknown Type',
       productName: row.loan_product_name || '',
-      loanAmount: row.loan_amount ? `ETB ${row.loan_amount.toLocaleString()}` : '—',
+      loanAmount: row.loan_amount ? row.loan_amount.toLocaleString() : '—',
       status,
       statusLabel: bankStatusLabel(status),
       statusTone: toneFor(status),

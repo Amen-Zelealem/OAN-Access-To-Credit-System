@@ -350,7 +350,7 @@ export const selectPagedRowsData = createSelector(
         id: formattedId,
         applicant: applicantName,
         phone: row.phone_number || '',
-        loanAmount: row.loan_amount ? `ETB ${row.loan_amount.toLocaleString()}` : '—',
+        loanAmount: row.loan_amount ? row.loan_amount.toLocaleString() : '—',
         type: row.loan_type || 'Unknown Type',
         status: row.status || 'Draft',
         statusTone: row.status === 'Approved' ? 'success' : row.status === 'Rejected' ? 'danger' : row.status === 'Draft' ? 'neutral' : 'info',

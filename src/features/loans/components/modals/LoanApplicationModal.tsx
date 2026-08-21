@@ -84,7 +84,7 @@ export default function LoanApplicationModal({ isOpen, onClose, data, onStatusCh
   const farmerName = data.applicant || (fullProfile?.first_name || fullProfile?.last_name ? `${fullProfile.first_name || ''} ${fullProfile.last_name || ''}`.trim() : '—');
   const phone = data.phone || fullProfile?.phone_number || '—';
   const loanProduct = fullProfile?.loan_product_name || '—';
-  const amount = data.amount || data.loanAmount || (fullProfile?.loan_amount ? `ETB ${fullProfile.loan_amount.toLocaleString()}` : ('—'));
+  const amount = data.amount || (data.loanAmount && data.loanAmount !== '—' ? `ETB ${data.loanAmount}` : null) || (fullProfile?.loan_amount ? `ETB ${fullProfile.loan_amount.toLocaleString()}` : ('—'));
   const appliedDate = data.updated || data.creation || '—';
   const purpose = fullProfile?.loan_reason || null;
 

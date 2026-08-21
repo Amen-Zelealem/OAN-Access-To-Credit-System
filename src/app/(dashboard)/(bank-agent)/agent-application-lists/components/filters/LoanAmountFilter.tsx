@@ -136,7 +136,7 @@ export default function LoanAmountFilter({ selectedValues, onChange }: LoanAmoun
         className="flex items-center gap-1.5 cursor-pointer select-none text-gray-500 hover:text-gray-700 transition-colors"
         onClick={handleClick}
       >
-        LOAN AMOUNT <Filter className={`w-3.5 h-3.5 transition-colors ${isOpen || selectedValues.length > 0 ? 'text-[#16A34A]' : ''}`} />
+        LOAN AMOUNT (ETB) <Filter className={`w-3.5 h-3.5 transition-colors ${isOpen || selectedValues.length > 0 ? 'text-[#16A34A]' : ''}`} />
       </div>
 
       {isOpen && (

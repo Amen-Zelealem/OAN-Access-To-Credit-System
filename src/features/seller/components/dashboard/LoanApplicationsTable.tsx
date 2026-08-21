@@ -17,7 +17,7 @@ import {
   updateLoanStatus
 } from '@/features/loans/store/loanDashboardSlice';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { AlertCircle, Download, Inbox, Loader2, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
+import { AlertCircle, FileOutput, Inbox, Loader2, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import SellerAdvancedFilters from './SellerAdvancedFilters';
 export function LoanApplicationsTable() {
@@ -70,7 +70,7 @@ export function LoanApplicationsTable() {
 
   const handleExportCsv = () => {
     if (!rows.length) return;
-    const headers = ['Application ID', 'Applicant', 'Phone', 'Loan Product', 'Amount', 'Status', 'Date'];
+    const headers = ['Application ID', 'Applicant', 'Phone', 'Loan Product', 'Amount (ETB)', 'Status', 'Date'];
     const csvContent = [
       headers.join(','),
       ...rows.map(r => [
@@ -125,7 +125,7 @@ export function LoanApplicationsTable() {
               onClick={handleExportCsv}
               className="px-4 py-2.5 text-sm font-semibold text-[#4B5563] bg-white border border-[#E5E7EB] rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-2 shadow-2xs"
             >
-              <Download className="w-4 h-4 text-[#6B7280]" />
+              <FileOutput className="w-4 h-4 text-[#6B7280]" />
               <span>Export CSV</span>
             </button>
 

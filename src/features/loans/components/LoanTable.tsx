@@ -312,7 +312,7 @@ const LoanTable = memo(({ onView, totalCount = 0 }: LoanTableProps) => {
               {/* Amount */}
               <th className="px-6 py-4 font-semibold">
                 <div className="relative inline-flex items-center gap-2">
-                  <span>Amount</span>
+                  <span>Amount (ETB)</span>
                   <button
                     ref={amountRef}
                     type="button"

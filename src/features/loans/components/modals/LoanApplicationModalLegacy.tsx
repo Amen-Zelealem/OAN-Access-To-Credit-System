@@ -118,7 +118,21 @@ export default function LoanApplicationModalLegacy({ isOpen, onClose, data }: Lo
               <div className="grid grid-cols-3 gap-y-6 gap-x-8">
                 <Field label="LOAN TYPE" value={fullProfile?.loan_type || data.type || null} />
                 <Field label="PURPOSE" value={fullProfile?.loan_reason || fullProfile?.purpose || null} />
-                <Field label="REQUESTED AMOUNT" value={fullProfile?.loan_amount ? `ETB ${fullProfile.loan_amount.toLocaleString()}` : (data.loanAmount || null)} />
+                <Field
+                  label="REQUESTED AMOUNT"
+                  value={
+                    fullProfile?.loan_amount
+                      ? `ETB ${fullProfile.loan_amount.toLocaleString()}`
+                      : data.loanAmount && data.loanAmount !== '—'
+                        // `loanAmount` arrives as a bare number from the table slices
+                        // (bankApplicationsSlice, loanDashboardSlice — both put the unit in
+                        // their column header instead) but still ETB-prefixed from
+                        // Step4Success's own locally-built `modalData` — normalize rather
+                        // than assume one shape.
+                        ? (data.loanAmount.startsWith('ETB') ? data.loanAmount : `ETB ${data.loanAmount}`)
+                        : null
+                  }
+                />
                 <Field label="DURATION" value={fullProfile?.duration || null} />
                 <Field label="PRIMARY CROPS" value={fullProfile?.primary_crops || null} />
                 <Field label="CROP VARIETY" value={fullProfile?.crop_variety || null} />

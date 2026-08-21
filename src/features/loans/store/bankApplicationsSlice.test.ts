@@ -178,7 +178,7 @@ describe('selectBankApplicationRows', () => {
       // the product name — has to be what it displays.
       type: 'Crop Loan',
       productName: 'Harvest Plus',
-      loanAmount: 'ETB 15,000',
+      loanAmount: '15,000',
     });
   });
 });
