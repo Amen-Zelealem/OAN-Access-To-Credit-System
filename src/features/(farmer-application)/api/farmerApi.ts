@@ -18,6 +18,7 @@ import type {
 // The catalog endpoint is shared with the bank portals, so it lives in lib.
 // Re-exported here because it is part of this feature's API surface and every
 // existing caller imports it from farmerApi.
+import { getCatalog } from '@/lib/api/catalogApi';
 export { getCatalog, getCatalogFacets } from '@/lib/api/catalogApi';
 
 /**
@@ -183,7 +184,9 @@ export async function getDashboardSummary(): Promise<ApiResponse<FarmerDashboard
  * Retrieves detailed information for a loan product.
  */
 export async function getProduct(productId: string): Promise<ApiResponse<{ product: DetailedLoanProduct }>> {
-  return fetchApi(`v1/catalog/products/${encodeURIComponent(productId)}`);
+  const res = await getCatalog({ loan_product: productId, limit: 1 });
+  const product = res.data?.products?.[0] as DetailedLoanProduct | undefined;
+  return { ...res, data: { product } } as ApiResponse<{ product: DetailedLoanProduct }>;
 }
 
 /**
