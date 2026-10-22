@@ -1,19 +1,10 @@
-// Reads the claims of an access token issued through the OpenG2P IAM service
-// (a Keycloak token today). A plain base64url decode, NOT a signature check:
-// these values are used for routing only. oan_auth_service verifies every API
-// call by asking IAM.
+// Reads the expiry of an access token issued through an OpenG2P IAM service.
+// A plain base64url decode, NOT a signature check: it only decides when to
+// refresh. oan_auth_service verifies every API call.
 //
-// Roles sit per client under `resource_access`. `application` picks the client
-// whose roles count — the same list oan_auth_service syncs onto the local user
-// — so routing here and authorization in the backend agree.
-
-export interface IamClaims {
-  /** The email (or username) when the token carries one, else IAM's opaque `sub`. Display only. */
-  sub: string;
-  roles: string[];
-  /** Epoch seconds. */
-  exp: number;
-}
+// Nothing else is read from the token. Roles come from `/v1/auth/me`: identity
+// providers without roles (eSignet) put none in the token, and the backend adds
+// default roles the token never shows.
 
 // `atob`/`TextDecoder`, not `Buffer`: this also runs in the Edge runtime (the
 // routing middleware), where `Buffer` does not exist.
@@ -26,29 +17,15 @@ function base64UrlDecode(segment: string): string {
   return new TextDecoder('utf-8').decode(bytes);
 }
 
-/** Returns the claims, or null if the token is malformed. Does not check expiry. */
-export function decodeIamAccessToken(token: string, application: string): IamClaims | null {
+/** The token's `exp` in epoch seconds, or null if the token is malformed. */
+export function decodeTokenExp(token: string): number | null {
   const parts = token.split('.');
   if (parts.length !== 3) return null;
 
   try {
     const payload = JSON.parse(base64UrlDecode(parts[1]!)) as Record<string, unknown>;
-    if (typeof payload.sub !== 'string' || typeof payload.exp !== 'number') return null;
-
-    const resourceAccess = payload.resource_access as Record<string, { roles?: unknown }> | undefined;
-    const roles = resourceAccess?.[application]?.roles;
-    const display = [payload.email, payload.preferred_username].find((v): v is string => typeof v === 'string');
-
-    return {
-      sub: display ?? payload.sub,
-      roles: Array.isArray(roles) ? roles.filter((r): r is string => typeof r === 'string') : [],
-      exp: payload.exp,
-    };
+    return typeof payload.exp === 'number' ? payload.exp : null;
   } catch {
     return null;
   }
-}
-
-export function isIamTokenExpired(claims: IamClaims, skewSeconds = 5): boolean {
-  return claims.exp <= Date.now() / 1000 + skewSeconds;
 }

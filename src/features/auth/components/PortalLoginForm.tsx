@@ -16,7 +16,7 @@ import { useAppDispatch } from '@/store/hooks';
 import { ArrowRight, CheckCircle2, Eye, EyeOff, Lock, User } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 export interface PortalLoginFormProps {
   /** Heading above the subtitle */
@@ -43,6 +43,8 @@ export interface PortalLoginFormProps {
   registerHref?: string;
   /** Show partner banks section at the bottom */
   showPartnerBanks?: boolean;
+  /** Rendered between the messages and the form: the portal's IAM login options. */
+  beforeForm?: ReactNode;
 }
 
 export function PortalLoginForm({
@@ -56,6 +58,7 @@ export function PortalLoginForm({
   showRegisterLink = false,
   registerHref = '/create-account',
   showPartnerBanks = true,
+  beforeForm,
 }: PortalLoginFormProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -184,6 +187,8 @@ export function PortalLoginForm({
       <SessionEndedNotice suppressed={!!errorMessage || !!notice} />
 
       {errorMessage && <ErrorAlert className="mb-6">{errorMessage}</ErrorAlert>}
+
+      {beforeForm}
 
       <form onSubmit={handleSubmit} className="w-full flex flex-col gap-6" autoComplete="off">
         <div className="flex flex-col gap-5">

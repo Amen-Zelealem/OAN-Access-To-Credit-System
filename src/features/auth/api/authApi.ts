@@ -158,32 +158,36 @@ export async function logoutUser(): Promise<boolean> {
 
 /**
  * `logoutUser`, plus where to send the browser next. For an SSO session the
- * server returns the identity provider's logout URL: the provider's own session
- * lives in the browser, so only a navigation there ends it.
+ * server may return the identity provider's logout URL: when the backend could
+ * not end the provider's session itself, only a navigation there does.
+ * `iamSessionEnded` is whether IAM confirmed the SSO session ended (null when
+ * there was none).
  */
-export async function endServerSession(
-  returnTo?: string
-): Promise<{ cleared: boolean; redirectTo: string | null }> {
+export async function endServerSession(): Promise<{
+  cleared: boolean;
+  redirectTo: string | null;
+  iamSessionEnded: boolean | null;
+}> {
   try {
     const res = await fetch(`/api/auth/logout`, {
       method: 'POST',
       credentials: 'include',
-      ...(returnTo ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ returnTo }) } : {}),
     });
 
     if (!res.ok) {
       logger.security(`Logout refused by the server with status ${res.status}`);
-      return { cleared: false, redirectTo: null };
+      return { cleared: false, redirectTo: null, iamSessionEnded: null };
     }
 
-    const body = (await res.json().catch(() => null)) as { redirectTo?: unknown } | null;
+    const body = (await res.json().catch(() => null)) as { redirectTo?: unknown; iamSessionEnded?: unknown } | null;
     const redirectTo = typeof body?.redirectTo === 'string' ? body.redirectTo : null;
-    return { cleared: true, redirectTo };
+    const iamSessionEnded = typeof body?.iamSessionEnded === 'boolean' ? body.iamSessionEnded : null;
+    return { cleared: true, redirectTo, iamSessionEnded };
   } catch (error) {
     // The cookies are httpOnly, so an unreachable route leaves the session live
     // server-side. Report that honestly rather than reporting success.
     logger.error('Logout request failed:', error);
-    return { cleared: false, redirectTo: null };
+    return { cleared: false, redirectTo: null, iamSessionEnded: null };
   }
 }
 

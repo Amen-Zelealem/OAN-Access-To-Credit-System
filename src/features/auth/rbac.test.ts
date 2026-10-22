@@ -133,10 +133,14 @@ describe('SSO (IAM) sessions', () => {
   it('reads an expired SSO token as expired, not as signed out', () => {
     const past = Math.floor(Date.now() / 1000) - 60;
 
-    expect(readIamRoutingSession({ roles: ['A2C Development Agent'], exp: past })).toEqual({
-      state: 'expired',
-      kind: 'dev_agent',
-    });
-    expect(readIamRoutingSession({ roles: [], exp: past })).toEqual({ state: 'none', kind: null });
+    expect(readIamRoutingSession('dev_agent', past)).toEqual({ state: 'expired', kind: 'dev_agent' });
+    expect(readIamRoutingSession(undefined, past)).toEqual({ state: 'none', kind: null });
+  });
+
+  it('accepts only the kinds that sign in through IAM', () => {
+    const future = Math.floor(Date.now() / 1000) + 60;
+
+    expect(readIamRoutingSession('farmer', future)).toEqual({ state: 'active', kind: 'farmer' });
+    expect(readIamRoutingSession('bank_admin', future)).toEqual({ state: 'none', kind: null });
   });
 });

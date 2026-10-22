@@ -3,7 +3,7 @@ import { AUTH_MESSAGES } from '@/lib/authMessages';
 import { getClientIp } from '@/lib/clientIp';
 import { readAppIamSession } from '@/lib/activeSession';
 import { checkCsrf } from '@/lib/csrf';
-import { applyIamCookies, expireIamCookies, refreshIamSession, type IamSession } from '@/lib/iamSession';
+import { applyIamCookies, clearLoginOptionCookie, refreshIamSession, type IamSession } from '@/lib/iamSession';
 import { env } from '@/lib/env';
 import { logger } from '@/lib/logger';
 import { checkRateLimit, rateLimitedResponse } from '@/lib/rateLimit';
@@ -19,16 +19,20 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 /**
- * Renews an SSO (IAM) session. IAM has no refresh endpoint: it renews an expired
- * token on any authenticated call, so this asks it for the user profile and
- * relays the new cookies. When IAM refuses, its cookies are stale and are
- * expired here so the next request reads as signed out.
+ * Renews an SSO (IAM) session through oan_auth_service, which has the option's
+ * IAM refresh it and answers with IAM's new cookies, relayed unchanged. When
+ * the session is over the browser's session ends too; when IAM is unreachable
+ * it is kept, and the caller can try again.
  */
 async function renewIamSession(iam: IamSession, clientIp: string): Promise<NextResponse> {
   const renewed = await refreshIamSession(iam, clientIp);
-  if (!renewed) {
+  if (renewed.status === 'down') {
+    return NextResponse.json({ message: AUTH_MESSAGES.signInUnavailable }, { status: 503 });
+  }
+  if (renewed.status === 'ended') {
     const response = endSession(AUTH_MESSAGES.sessionExpired);
-    expireIamCookies(response);
+    clearLoginOptionCookie(response);
+    applyIamCookies(response, renewed.setCookies);
     return response;
   }
   const response = NextResponse.json({ success: true, message: 'Token refreshed successfully' });

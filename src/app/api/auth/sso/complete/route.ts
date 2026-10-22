@@ -1,18 +1,27 @@
-import { homeRouteFor, kindFromRoles } from '@/features/auth/rbac';
-import { iamConfig, readIamSession } from '@/lib/iamSession';
+import { homeRouteFor, IAM_LOGIN_KINDS, kindFromRoles } from '@/features/auth/rbac';
+import { getClientIp } from '@/lib/clientIp';
+import { fetchIamUser, isAccessTokenDropped, readIamSession, setLoginOptionCookie } from '@/lib/iamSession';
+import { logger } from '@/lib/logger';
 import { clearSessionCookies } from '@/lib/session';
-import { backToSsoLogin } from '@/lib/ssoRedirect';
+import { backToSsoLogin, ssoLoginPath } from '@/lib/ssoRedirect';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 /**
- * Where SSO lands once IAM has opened the session: the URL
- * `/api/auth/sso/login` gave IAM as its post-login redirect. IAM's cookies
- * (shared parent domain) arrive with this request — set by IAM's own callback
- * or relayed by `/api/auth/sso/callback`.
+ * Where IAM sends the browser once it has opened the session: the URL
+ * `/api/auth/sso/login` gave as `return_url`. IAM's cookies (shared parent
+ * domain) arrive with this request; `login_option` says whose to read.
  *
- * Drops any local session the browser still held, so the routing middleware
- * (which prefers a local session) cannot mix the two up.
+ * Access is decided by `/v1/auth/me`, never by roles decoded from the token:
+ * it runs the backend's full token check, creates the user on a first login,
+ * and returns the user's roles in this app, including default roles the token
+ * never shows. The kind it maps to is stored in `login_option` for routing.
+ *
+ * A user with no role here is sent back, but not logged out of IAM: their IAM
+ * session is valid for other apps.
+ *
+ * Drops any local session the browser still held, so the two session kinds
+ * never mix.
  *
  * Answers with a tiny page that navigates on, not a 30x: the redirect chain
  * that got here started at the identity provider, and a browser withholds
@@ -20,15 +29,23 @@ import { NextResponse } from 'next/server';
  * A navigation this page starts itself is same-site.
  */
 export async function GET(request: NextRequest) {
-  if (!iamConfig()) return backToSsoLogin(request, 'sso_unavailable');
+  const from = ssoLoginPath(request.nextUrl.searchParams.get('from'));
 
   const session = readIamSession(request);
-  if (!session?.claims) return backToSsoLogin(request, 'sso_failed');
+  if (!session) return backToSsoLogin(request, 'sso_failed', from);
+  if (isAccessTokenDropped(session)) return backToSsoLogin(request, 'sso_token_too_large', from);
+  if (!session.accessToken) return backToSsoLogin(request, 'sso_failed', from);
 
-  // Signed in at IAM, but holds no role of this app on the IAM client. Their
-  // session is left alone: it is still valid for the apps it is for.
-  const kind = kindFromRoles(session.claims.roles);
-  if (!kind) return backToSsoLogin(request, 'sso_no_access');
+  let user: { roles: string[] } | null;
+  try {
+    user = await fetchIamUser(session.accessToken, getClientIp(request));
+  } catch (error) {
+    logger.error('SSO landing could not load the user:', error);
+    return backToSsoLogin(request, 'sso_down', from);
+  }
+
+  const kind = user ? kindFromRoles(user.roles) : null;
+  if (!kind || !IAM_LOGIN_KINDS.includes(kind)) return backToSsoLogin(request, 'sso_no_access', from);
 
   const href = homeRouteFor(kind);
 
@@ -44,5 +61,6 @@ export async function GET(request: NextRequest) {
     }
   );
   clearSessionCookies(response);
+  setLoginOptionCookie(response, { ...session.option, kind });
   return response;
 }

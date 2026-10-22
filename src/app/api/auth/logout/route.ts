@@ -1,11 +1,10 @@
 import { getClientIp } from '@/lib/clientIp';
 import { checkCsrf } from '@/lib/csrf';
-import { applyIamCookies, readIamSession, revokeIamSession } from '@/lib/iamSession';
+import { applyIamCookies, clearLoginOptionCookie, readIamSession, revokeIamSession } from '@/lib/iamSession';
 import { env } from '@/lib/env';
 import { logger } from '@/lib/logger';
 import { checkRateLimit, rateLimitedResponse } from '@/lib/rateLimit';
 import { RATE_LIMITS } from '@/lib/securityConfig';
-import { safeLoginPath } from '@/lib/ssoRedirect';
 import { clearSessionCookies, REFRESH_TOKEN_COOKIE } from '@/lib/session';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -36,6 +35,7 @@ export async function POST(request: NextRequest) {
     );
     const limited = rateLimitedResponse(limit.retryAfterSeconds);
     clearSessionCookies(limited);
+    clearLoginOptionCookie(limited);
     return limited;
   }
 
@@ -69,31 +69,30 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // An SSO session is ended at IAM (it drops the refresh token it holds) and at
-  // the identity provider: IAM hands back the provider's logout URL, which the
-  // client navigates to — the provider's SSO session lives in the browser, so
-  // only the browser can end it. The provider then returns the browser to
-  // `returnTo`, this app's own login page. Best effort: `revokeIamSession` never
-  // throws, and without a URL the client just lands locally.
+  // An SSO session is ended through oan_auth_service, which has the option's
+  // IAM drop the refresh token it holds and, where it can, ends the identity
+  // provider session server-to-server. When it cannot, it hands back the
+  // provider's logout URL for the browser to visit: the provider's session lives
+  // in the browser's cookies. Best effort: `revokeIamSession` never throws.
   //
-  // With no local session, any IAM session is ended, including one this app does
-  // not accept (a user with no role here, say). That is what "Sign out and use a
-  // different account" on the login page asks for; without it Keycloak would
-  // sign the same account straight back in on every SSO attempt.
+  // With no local session, any IAM session of the recorded login option is
+  // ended, including one this app does not accept (a user with no role here,
+  // say). That is what "Sign out and use a different account" on the login page
+  // asks for; without it the identity provider would sign the same account
+  // straight back in on every SSO attempt.
   const iam = refreshToken ? null : readIamSession(request);
-  const body = (await request.json().catch(() => ({}))) as { returnTo?: unknown };
-  const returnTo = safeLoginPath(body.returnTo) ?? '/login';
-  const iamLogout = iam
-    ? await revokeIamSession(iam, new URL(returnTo, request.url).toString(), clientIp)
-    : null;
+  const iamLogout = iam ? await revokeIamSession(iam, clientIp) : null;
 
   const response = NextResponse.json({
     success: true,
     message: 'Logged out successfully',
-    redirectTo: iamLogout?.providerLogoutUrl ?? null,
+    iamSessionEnded: iamLogout?.ended ?? null,
+    redirectTo: iamLogout?.logoutUrl ?? null,
   });
+  // This app's cookies first, then IAM's clearing headers, which carry the
+  // exact domain IAM set its cookies on.
   clearSessionCookies(response);
-  // IAM's own clearing headers carry the exact domain it set the cookies on.
+  clearLoginOptionCookie(response);
   applyIamCookies(response, iamLogout?.setCookies ?? []);
   return response;
 }

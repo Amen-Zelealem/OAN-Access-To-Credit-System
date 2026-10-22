@@ -209,8 +209,8 @@ const ROLE_KINDS: ReadonlyArray<readonly [string, UserKind]> = [
 ];
 
 /**
- * The user kind for a role list. For SSO (IAM) sessions only: their tokens are
- * issued by the identity provider and carry roles, not our `user_type` claim.
+ * The user kind for a role list. For SSO (IAM) sessions only, with the roles
+ * `/v1/auth/me` returns: IAM tokens carry no `user_type` claim of ours.
  * Returns null when no role belongs to this app.
  */
 export function kindFromRoles(roles: ReadonlyArray<string>): UserKind | null {
@@ -218,18 +218,20 @@ export function kindFromRoles(roles: ReadonlyArray<string>): UserKind | null {
 }
 
 /**
- * `readRoutingSession` for an SSO session. `canRenew` is whether IAM can still
- * hand out a fresh token (both its cookies are present): an expired token then
- * counts as the normal state between renewals, exactly like a local session
- * with a refresh token.
+ * The kinds that may sign in through an IAM login option. Bank admins and bank
+ * agents sign in with this app's own username and password only.
  */
-export function readIamRoutingSession(
-  claims: { roles: string[]; exp: number } | null,
-): RoutingSession {
-  if (!claims) return NO_SESSION;
-  const kind = kindFromRoles(claims.roles);
-  if (!kind) return NO_SESSION;
-  return { state: claims.exp * 1000 <= Date.now() ? 'expired' : 'active', kind };
+export const IAM_LOGIN_KINDS: ReadonlyArray<UserKind> = ['dev_agent', 'farmer'];
+
+/**
+ * `readRoutingSession` for an SSO session: `kind` is what the landing route
+ * stored from `/me`, `exp` the access token's expiry. An expired token is the
+ * normal state between renewals, exactly like a local session with a refresh
+ * token; the caller decides whether it can still be renewed.
+ */
+export function readIamRoutingSession(kind: UserKind | undefined, exp: number | null): RoutingSession {
+  if (!kind || !IAM_LOGIN_KINDS.includes(kind)) return NO_SESSION;
+  return { state: exp === null || exp * 1000 <= Date.now() ? 'expired' : 'active', kind };
 }
 
 // Reads the user_type claim for routing, REGARDLESS of token expiry.

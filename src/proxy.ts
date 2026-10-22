@@ -40,11 +40,12 @@ export function proxy(request: NextRequest) {
   const localSession = readRoutingSession(token);
   const hasRefreshToken = !!request.cookies.get(REFRESH_TOKEN_COOKIE)?.value;
 
-  // A Development Agent signs in through SSO: the session is the OpenG2P IAM
-  // service's cookies, not ours (lib/iamSession.ts). A local session wins when a
-  // browser somehow holds both — it is the one this app issued.
+  // Development Agents and farmers can sign in through an IAM login option: the
+  // session is then that IAM's cookies, not ours (lib/iamSession.ts). A local
+  // session wins when a browser somehow holds both — it is the one this app
+  // issued. The proxy route makes the same choice.
   const iam = localSession.state === 'none' && !hasRefreshToken ? readAppIamSession(request) : null;
-  const session = iam ? readIamRoutingSession(iam.claims) : localSession;
+  const session = iam ? readIamRoutingSession(iam.option.kind, iam.exp) : localSession;
   const canRenew = iam ? canRefreshIamSession(iam) : hasRefreshToken;
 
   // 0. Idle timeout. The activity cookie outlives its own max-age only while

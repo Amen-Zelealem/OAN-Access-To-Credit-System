@@ -4,6 +4,7 @@ import { getClientIp } from '@/lib/clientIp';
 import { checkCsrf } from '@/lib/csrf';
 import { env } from '@/lib/env';
 import { logger } from '@/lib/logger';
+import { clearLoginOptionCookie } from '@/lib/iamSession';
 import { flattenMe } from '@/lib/meMapper';
 import { checkRateLimit, rateLimitedResponse } from '@/lib/rateLimit';
 import { RATE_LIMITS } from '@/lib/securityConfig';
@@ -125,6 +126,9 @@ export async function POST(request: Request) {
     // can reapply the same lifetime instead of silently promoting a one-day
     // session to a thirty-day one.
     setSessionCookies(nextResponse, { token, refreshToken, rememberMe });
+    // At most one session kind at a time: a local sign-in drops the IAM login
+    // option, as the SSO landing route drops the local session.
+    clearLoginOptionCookie(nextResponse);
 
     return nextResponse;
   } catch (error) {
