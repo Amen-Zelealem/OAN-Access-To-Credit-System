@@ -47,6 +47,19 @@ describe('flattenMe', () => {
     expect(user?.bank_id).toBeNull();
   });
 
+  it('assembles full_name from first_name and last_name when full_name is omitted', () => {
+    const user = flattenMe({
+      user: 'abc123@id.openagrinet.internal',
+      first_name: 'Abebe',
+      last_name: 'Bikila',
+      login_email: 'abebe@example.com',
+      roles: ['A2C Farmer'],
+      profiles: { a2c: { user_type: 'farmer' } },
+    });
+
+    expect(user?.full_name).toBe('Abebe Bikila');
+  });
+
   it('returns null when there is no user', () => {
     expect(flattenMe(undefined)).toBeNull();
     expect(flattenMe({})).toBeNull();

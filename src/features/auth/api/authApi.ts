@@ -265,9 +265,15 @@ export async function forgotPassword(email: string): Promise<void> {
 }
 
 export async function resetPassword(email: string, key: string, new_password: string): Promise<void> {
+  // If an email reset key was passed, authenticate via `key`.
+  // Otherwise, fallback to phone-based SMS verification { usr, otp, new_password }.
+  const body = key
+    ? { key, new_password }
+    : { usr: email, otp: key, new_password };
+
   await fetchApi('v1/auth/password/reset', {
     method: 'POST',
-    body: JSON.stringify({ usr: email, otp: key, new_password }),
+    body: JSON.stringify(body),
   });
 }
 

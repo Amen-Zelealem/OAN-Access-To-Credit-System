@@ -7,6 +7,8 @@
 
 interface MePayload {
   user?: string;
+  first_name?: string | null;
+  last_name?: string | null;
   full_name?: string | null;
   login_email?: string | null;
   roles?: string[];
@@ -27,11 +29,21 @@ export function flattenMe(me: MePayload | null | undefined): Record<string, unkn
 
   const a2c = me.profiles?.a2c ?? {};
 
+  const computedFullName =
+    typeof me.full_name === 'string' && me.full_name.trim()
+      ? me.full_name.trim()
+      : [me.first_name, me.last_name]
+          .filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
+          .join(' ') ||
+        me.login_email ||
+        me.user ||
+        '';
+
   return {
     // Accounts made by an admin keep their email as the user id; self-registered
     // ones have a synthetic id and carry the real address as `login_email`.
     email: me.login_email ?? me.user,
-    full_name: me.full_name ?? '',
+    full_name: computedFullName,
     roles: me.roles ?? [],
     user_type: a2c.user_type ?? null,
     bank: a2c.bank ?? null,
