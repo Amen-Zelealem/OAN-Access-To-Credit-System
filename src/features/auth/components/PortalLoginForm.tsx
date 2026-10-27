@@ -1,5 +1,6 @@
 'use client';
 
+import { isValidLoginIdentifier, normalizeLoginIdentifierInput } from '@/lib/validation/phone';
 import { PartnerBanks } from '@/app/(portal-account)/components/PartnerBanks';
 import { SessionEndedNotice } from '@/components/SessionEndedNotice';
 import { Button } from '@/components/ui/Button';
@@ -110,9 +111,13 @@ export function PortalLoginForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setErrorMessage(null);
     setNotice(null);
+    if (!isValidLoginIdentifier(username)) {
+      setErrorMessage('Enter a valid email or a 9-digit phone number.');
+      return;
+    }
+    setIsLoading(true);
     dispatch(clearAuthError());
 
     try {
@@ -204,7 +209,7 @@ export function PortalLoginForm({
                 readOnly={usernameReadOnly}
                 onFocus={unlockUsername}
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => setUsername(normalizeLoginIdentifierInput(e.target.value))}
                 placeholder={usernamePlaceholder}
                 required
                 className="w-full pl-10 pr-4 py-3 bg-white border border-[#D1D5DB] rounded-xl text-[14px] text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-all placeholder:text-[#9CA3AF] font-medium shadow-sm"

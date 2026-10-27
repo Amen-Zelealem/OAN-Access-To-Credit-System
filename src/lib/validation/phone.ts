@@ -1,7 +1,7 @@
 /** Local mobile number digits, excluding any country/dial code prefix. */
-export const PHONE_NUMBER_LENGTH = 10;
+export const PHONE_NUMBER_LENGTH = 9;
 
-export const PHONE_NUMBER_REGEX = /^\d{10}$/;
+export const PHONE_NUMBER_REGEX = /^\d{9}$/;
 
 /** Strips every non-digit character (spaces, dashes, parens, `+`, letters). */
 export function toDigitsOnly(value: string): string {
@@ -12,8 +12,8 @@ export function toDigitsOnly(value: string): string {
  * Drops a single leading trunk `0` from a local number before it's
  * concatenated with a country/dial code (e.g. domestic "0911000000" ->
  * "911000000" so "+251" + result is valid E.164, not "+2510911000000").
- * Only one `0` is stripped — the field is capped at 10 digits, so the
- * result is always 9 or 10 digits, never fewer.
+ * Only one `0` is stripped — the field is capped at 9 digits, so a
+ * valid local number never starts with a trunk 0.
  */
 export function stripLeadingZero(digits: string): string {
   return digits.replace(/^0/, '');
@@ -48,4 +48,32 @@ export function splitPhoneNumber(value: string): { countryCode: string; localDig
     return { countryCode: '+251', localDigits: toDigitsOnly(trimmed) };
   }
   return { countryCode: '+251', localDigits: stripLeadingZero(toDigitsOnly(trimmed)) };
+}
+
+/** Longest phone-style login identifier: "+251" plus 9 local digits plus a trunk 0 slip. */
+const LOGIN_PHONE_MAX_DIGITS = 13;
+
+/** Caps phone-style (no `@`) login input to a sane digit count; emails pass through. */
+export function normalizeLoginIdentifierInput(value: string): string {
+  if (value.includes('@') || /[a-z]/i.test(value)) return value;
+  let digits = 0;
+  let out = '';
+  for (const ch of value) {
+    if (/\d/.test(ch)) {
+      if (digits >= LOGIN_PHONE_MAX_DIGITS) continue;
+      digits += 1;
+    }
+    out += ch;
+  }
+  return out;
+}
+
+/** Login identifier is an email, or a phone whose local part is exactly PHONE_NUMBER_LENGTH digits. */
+export function isValidLoginIdentifier(value: string): boolean {
+  const v = value.trim();
+  if (!v) return false;
+  if (v.includes('@') || /[a-z]/i.test(v)) return true;
+  const digits = toDigitsOnly(v);
+  const local = v.startsWith('+') ? digits.replace(/^251/, '') : stripLeadingZero(digits.replace(/^251(?=\d{9}$)/, ''));
+  return PHONE_NUMBER_REGEX.test(local);
 }

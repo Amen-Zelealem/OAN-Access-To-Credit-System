@@ -67,7 +67,7 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isPhoneValid) {
-      toast.error('Phone number must be exactly 10 digits.');
+      toast.error('Phone number must be exactly 9 digits.');
       return;
     }
     if (!isValidTaxRegistrationLength(orgFields.bank_code)) {

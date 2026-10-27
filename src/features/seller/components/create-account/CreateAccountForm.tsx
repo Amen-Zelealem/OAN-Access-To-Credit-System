@@ -41,7 +41,7 @@ export function CreateAccountForm() {
     dispatch(clearOnboardingErrors());
 
     if (!PHONE_NUMBER_REGEX.test(phoneNumber)) {
-      setLocalError('Mobile number must be exactly 10 digits.');
+      setLocalError('Mobile number must be exactly 9 digits.');
       return;
     }
 
