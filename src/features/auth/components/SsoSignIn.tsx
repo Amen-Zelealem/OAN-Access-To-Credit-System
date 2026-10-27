@@ -11,11 +11,10 @@ import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
 // Why `/api/auth/sso/*` sent the person back here (see lib/ssoRedirect.ts).
-// None of them echo server error text.
+// None of them echo server error text. `sso_unavailable`, `sso_failed` and
+// `sso_down` have no entry on purpose: the portal falls back to its password
+// form silently and the server logs the cause.
 const SSO_ERRORS: Record<string, string> = {
-  sso_unavailable: 'This sign-in method is not available.',
-  sso_failed: 'Sign-in failed. Please try again.',
-  sso_down: 'Sign-in is temporarily unavailable. Please try again shortly.',
   sso_no_access: 'Your account does not have access to this portal. Ask your administrator for access.',
   sso_token_too_large: 'Your account has too many roles to sign in here. Contact an administrator.',
 };
@@ -141,7 +140,8 @@ function IamOptions({ loginPath, buttons, notice, withDivider, standalone = fals
       <div className="w-full flex flex-col gap-3">
         {buttons.map((option) => {
           const isNavigating = navigatingTo === option.key;
-          const href = `/api/auth/sso/login?${new URLSearchParams({ key: option.key, from: loginPath })}`;
+          const query = (origin?: string) => new URLSearchParams({ key: option.key, from: loginPath, ...(origin ? { origin } : {}) });
+          const href = `/api/auth/sso/login?${query()}`;
           return (
             <Button
               key={option.key}
@@ -149,7 +149,14 @@ function IamOptions({ loginPath, buttons, notice, withDivider, standalone = fals
               href={href}
               size="none"
               isLoading={isNavigating}
-              onClick={() => setNavigatingTo(option.key)}
+              onClick={(event) => {
+                event.preventDefault();
+                setNavigatingTo(option.key);
+                // Carry the origin the browser is on: the server only sees its bind address.
+                // A route handler that redirects to the identity provider, not a page.
+                // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+                window.location.assign(`/api/auth/sso/login?${query(window.location.origin)}`);
+              }}
               className="w-full py-4 text-[14px] space-x-2 active:scale-[0.98]"
             >
               {option.iconUrl && !isNavigating && (

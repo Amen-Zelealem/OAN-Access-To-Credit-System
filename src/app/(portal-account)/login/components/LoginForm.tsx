@@ -10,6 +10,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { PORTALS } from '@/app/(portal-account)/login/portals';
 import type { LoginProvider } from '@/lib/loginOptions';
 
 /**
@@ -29,7 +30,7 @@ interface RoleChoice {
   title: string;
   description: string;
   /** IAM login option keys that sign this role in; the first one offered wins. */
-  iamKeys?: readonly string[];
+  iamKeys?: readonly string[] | undefined;
 }
 
 const ROLE_CHOICES: readonly RoleChoice[] = [
@@ -41,7 +42,7 @@ const ROLE_CHOICES: readonly RoleChoice[] = [
     iconColor: 'text-[#16A34A]',
     title: 'Farmer Applicant',
     description: 'Ethiopia OAN Farmer Portal',
-    iamKeys: ['beneficiary', 'bene'],
+    iamKeys: PORTALS.farmer.iamKeys,
   },
   {
     id: 'bank',
@@ -60,7 +61,7 @@ const ROLE_CHOICES: readonly RoleChoice[] = [
     iconColor: 'text-orange-500',
     title: 'Development Agent',
     description: 'Support farmer outreach and data collection',
-    iamKeys: ['agent'],
+    iamKeys: PORTALS['development-agent'].iamKeys,
   },
   {
     id: 'admin',
@@ -95,7 +96,7 @@ export function LoginForm({ providers = null }: { providers?: LoginProvider[] | 
       setIsRedirecting(true);
       // A route handler that redirects to the identity provider, not a page:
       // router.push cannot follow it.
-      window.location.assign(`/api/auth/sso/login?${new URLSearchParams({ key, from: href })}`);
+      window.location.assign(`/api/auth/sso/login?${new URLSearchParams({ key, from: href, origin: window.location.origin })}`);
       return;
     }
     router.push(href);

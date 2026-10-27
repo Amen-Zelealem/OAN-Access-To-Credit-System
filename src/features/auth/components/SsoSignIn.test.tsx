@@ -124,11 +124,11 @@ describe('SsoSignIn after an SSO sign-in with no access here', () => {
     expect(screen.queryByRole('button', { name: 'Sign out and use a different account' })).not.toBeInTheDocument();
   });
 
-  it('does not offer it for other SSO failures', () => {
+  it('shows no message and does not offer it for other SSO failures', () => {
     search = '?reason=sso_failed';
     renderSignIn([provider('agent', 'Agent')]);
 
-    expect(screen.getByText('Sign-in failed. Please try again.')).toBeInTheDocument();
+    expect(screen.queryByText('Sign-in failed. Please try again.')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Sign out and use a different account' })).not.toBeInTheDocument();
   });
 });

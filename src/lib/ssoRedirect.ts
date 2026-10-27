@@ -1,5 +1,5 @@
-import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
+import { relativeRedirect } from '@/lib/relativeRedirect';
+import type { NextResponse } from 'next/server';
 
 /**
  * Why `/api/auth/sso/*` sent the browser back to a login page.
@@ -26,6 +26,7 @@ export function ssoLoginPath(value: unknown): string {
   return SSO_LOGIN_PATHS.find((path) => path === value) ?? DEFAULT_SSO_LOGIN_PATH;
 }
 
-export function backToSsoLogin(request: NextRequest, reason: SsoFailureReason, from?: string): NextResponse {
-  return NextResponse.redirect(new URL(`${ssoLoginPath(from)}?reason=${reason}`, request.url), 303);
+/** Relative, so the browser resolves it against the host it used, not the server's bind address. */
+export function backToSsoLogin(reason: SsoFailureReason, from?: string): NextResponse {
+  return relativeRedirect(`${ssoLoginPath(from)}?reason=${reason}`);
 }

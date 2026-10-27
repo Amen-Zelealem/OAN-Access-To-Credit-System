@@ -32,20 +32,20 @@ export async function GET(request: NextRequest) {
   const from = ssoLoginPath(request.nextUrl.searchParams.get('from'));
 
   const session = readIamSession(request);
-  if (!session) return backToSsoLogin(request, 'sso_failed', from);
-  if (isAccessTokenDropped(session)) return backToSsoLogin(request, 'sso_token_too_large', from);
-  if (!session.accessToken) return backToSsoLogin(request, 'sso_failed', from);
+  if (!session) return backToSsoLogin('sso_failed', from);
+  if (isAccessTokenDropped(session)) return backToSsoLogin('sso_token_too_large', from);
+  if (!session.accessToken) return backToSsoLogin('sso_failed', from);
 
   let user: { roles: string[] } | null;
   try {
     user = await fetchIamUser(session.accessToken, getClientIp(request));
   } catch (error) {
     logger.error('SSO landing could not load the user:', error);
-    return backToSsoLogin(request, 'sso_down', from);
+    return backToSsoLogin('sso_down', from);
   }
 
   const kind = user ? kindFromRoles(user.roles) : null;
-  if (!kind || !IAM_LOGIN_KINDS.includes(kind)) return backToSsoLogin(request, 'sso_no_access', from);
+  if (!kind || !IAM_LOGIN_KINDS.includes(kind)) return backToSsoLogin('sso_no_access', from);
 
   const href = homeRouteFor(kind);
 
