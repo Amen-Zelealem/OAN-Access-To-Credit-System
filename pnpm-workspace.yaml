@@ -19,4 +19,6 @@ overrides:
   # scoped so the blanket ^5.0.12 fix above still applies to everything else.
   "minimatch@3>brace-expansion": "^1.1.21"
   source-map-js: "^1.2.2"
-  undici: "^8.11.2"
+  undici: "^8.12.3"
+  vite: "^8.3.5"
+  handlebars: "^4.7.10"
