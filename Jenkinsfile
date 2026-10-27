@@ -40,7 +40,7 @@ pipeline {
   environment {
     AWS_REGION               = 'ap-south-1'
     BACKEND_IP               = '10.0.2.100'                            // AWS backend box (staging_aws)
-    DEV_API_BASE_URL         = 'https://a2c-backend-development.oanstaging.com'
+    DEV_API_BASE_URL         = 'https://a2c-backend-development.oanstaging.com/api'
     STAGING_API_BASE_URL     = 'https://a2c.ati-staging.internal'      // on-prem backend on node 41
     AWS_STAGING_API_BASE_URL = 'https://a2c-backend.oanstaging.com/api' // staging_aws: reuse existing public backend; routes call ${API_BASE_URL}/v1/...
     STAGING_AWS_APP_DIR      = '/opt/oan_a2c_fe_staging'               // separate from main's /opt/oan_a2c_fe_main
