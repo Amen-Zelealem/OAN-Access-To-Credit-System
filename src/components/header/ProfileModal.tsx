@@ -127,7 +127,7 @@ export function ProfileModal({ isOpen, onClose, role = 'Admin' }: ProfileModalPr
     const phoneChanged =
       formData.phoneCountryCode !== original.countryCode || formData.phoneLocalDigits !== original.localDigits;
     if (!isProfileReadOnly && phoneChanged && !PHONE_NUMBER_REGEX.test(formData.phoneLocalDigits)) {
-      toast.error('Phone number must be exactly 10 digits');
+      toast.error('Phone number must be exactly 9 digits');
       return;
     }
     // Untouched: send the original value through byte-for-byte rather than
@@ -422,7 +422,7 @@ export function ProfileModal({ isOpen, onClose, role = 'Admin' }: ProfileModalPr
                             id="profile-phone"
                             type="tel"
                             inputMode="numeric"
-                            maxLength={10}
+                            maxLength={9}
                             value={formData.phoneLocalDigits}
                             onChange={(e) => setFormData({ ...formData, phoneLocalDigits: toDigitsOnly(e.target.value) })}
                             placeholder="Enter phone number"

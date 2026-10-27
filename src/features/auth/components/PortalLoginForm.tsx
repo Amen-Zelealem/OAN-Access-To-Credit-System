@@ -1,5 +1,6 @@
 'use client';
 
+import { isValidLoginIdentifier, normalizeLoginIdentifierInput } from '@/lib/validation/phone';
 import { PartnerBanks } from '@/app/(portal-account)/components/PartnerBanks';
 import { SessionEndedNotice } from '@/components/SessionEndedNotice';
 import { Button } from '@/components/ui/Button';
@@ -16,7 +17,7 @@ import { useAppDispatch } from '@/store/hooks';
 import { ArrowRight, CheckCircle2, Eye, EyeOff, Lock, User } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 export interface PortalLoginFormProps {
   /** Heading above the subtitle */
@@ -43,6 +44,8 @@ export interface PortalLoginFormProps {
   registerHref?: string;
   /** Show partner banks section at the bottom */
   showPartnerBanks?: boolean;
+  /** Rendered between the messages and the form: the portal's IAM login options. */
+  beforeForm?: ReactNode;
 }
 
 export function PortalLoginForm({
@@ -56,6 +59,7 @@ export function PortalLoginForm({
   showRegisterLink = false,
   registerHref = '/create-account',
   showPartnerBanks = true,
+  beforeForm,
 }: PortalLoginFormProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -107,9 +111,13 @@ export function PortalLoginForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setErrorMessage(null);
     setNotice(null);
+    if (!isValidLoginIdentifier(username)) {
+      setErrorMessage('Enter a valid email or a 9-digit phone number.');
+      return;
+    }
+    setIsLoading(true);
     dispatch(clearAuthError());
 
     try {
@@ -185,6 +193,8 @@ export function PortalLoginForm({
 
       {errorMessage && <ErrorAlert className="mb-6">{errorMessage}</ErrorAlert>}
 
+      {beforeForm}
+
       <form onSubmit={handleSubmit} className="w-full flex flex-col gap-6" autoComplete="off">
         <div className="flex flex-col gap-5">
           <label className="flex flex-col gap-2.5">
@@ -199,7 +209,7 @@ export function PortalLoginForm({
                 readOnly={usernameReadOnly}
                 onFocus={unlockUsername}
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => setUsername(normalizeLoginIdentifierInput(e.target.value))}
                 placeholder={usernamePlaceholder}
                 required
                 className="w-full pl-10 pr-4 py-3 bg-white border border-[#D1D5DB] rounded-xl text-[14px] text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-all placeholder:text-[#9CA3AF] font-medium shadow-sm"

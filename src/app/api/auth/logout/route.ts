@@ -1,5 +1,6 @@
 import { getClientIp } from '@/lib/clientIp';
 import { checkCsrf } from '@/lib/csrf';
+import { applyIamCookies, clearLoginOptionCookie, readIamSession, revokeIamSession } from '@/lib/iamSession';
 import { env } from '@/lib/env';
 import { logger } from '@/lib/logger';
 import { checkRateLimit, rateLimitedResponse } from '@/lib/rateLimit';
@@ -34,6 +35,7 @@ export async function POST(request: NextRequest) {
     );
     const limited = rateLimitedResponse(limit.retryAfterSeconds);
     clearSessionCookies(limited);
+    clearLoginOptionCookie(limited);
     return limited;
   }
 
@@ -41,7 +43,7 @@ export async function POST(request: NextRequest) {
 
   // Revoke the refresh token server-side before dropping the cookies.
   //
-  // Clearing cookies alone leaves the token valid in `A2C User Refresh Token`
+  // Clearing cookies alone leaves the token valid in `OAN User Refresh Token`
   // until it expires — so anyone who captured it (a shared device, a proxy log,
   // a backup) could still redeem it for a live session long after sign-out. The
   // backend endpoint deletes the row, which is what actually ends the session.
@@ -67,7 +69,30 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const response = NextResponse.json({ success: true, message: 'Logged out successfully' });
+  // An SSO session is ended through oan_auth_service, which has the option's
+  // IAM drop the refresh token it holds and, where it can, ends the identity
+  // provider session server-to-server. When it cannot, it hands back the
+  // provider's logout URL for the browser to visit: the provider's session lives
+  // in the browser's cookies. Best effort: `revokeIamSession` never throws.
+  //
+  // With no local session, any IAM session of the recorded login option is
+  // ended, including one this app does not accept (a user with no role here,
+  // say). That is what "Sign out and use a different account" on the login page
+  // asks for; without it the identity provider would sign the same account
+  // straight back in on every SSO attempt.
+  const iam = refreshToken ? null : readIamSession(request);
+  const iamLogout = iam ? await revokeIamSession(iam, clientIp) : null;
+
+  const response = NextResponse.json({
+    success: true,
+    message: 'Logged out successfully',
+    iamSessionEnded: iamLogout?.ended ?? null,
+    redirectTo: iamLogout?.logoutUrl ?? null,
+  });
+  // This app's cookies first, then IAM's clearing headers, which carry the
+  // exact domain IAM set its cookies on.
   clearSessionCookies(response);
+  clearLoginOptionCookie(response);
+  applyIamCookies(response, iamLogout?.setCookies ?? []);
   return response;
 }

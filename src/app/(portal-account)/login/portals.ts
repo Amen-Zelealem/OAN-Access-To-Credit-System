@@ -21,12 +21,17 @@ export interface PortalConfig {
   /** Whether the Bank Admin / Bank Agent tab pair sits above the form. Only the
    *  two bank portals are alternatives to each other; the rest are not. */
   roleTabs?: boolean;
+  /** The portal offers the IAM login options oan_auth_service lists: one
+   *  button each, and the password form below only when the list includes
+   *  `local`. Its page loads the list (`listLoginProviders`). */
+  iamLogin?: boolean;
   form: PortalLoginFormProps;
 }
 
 export const PORTALS: Record<PortalId, PortalConfig> = {
   farmer: {
     badge: 'Farmer Portal',
+    iamLogin: true,
     form: {
       heading: 'Farmer Sign In',
       subtitle: 'Sign in to browse and apply for loans',
@@ -75,6 +80,10 @@ export const PORTALS: Record<PortalId, PortalConfig> = {
 
   'development-agent': {
     badge: 'Field Agent Portal',
+    // Development Agents sign in through IAM; the backend refuses a local
+    // account holding the role (oan_a2c/api/auth.py,
+    // require_sso_for_development_agents).
+    iamLogin: true,
     form: {
       subtitle: 'Coordinate field-level agricultural credit access across regions',
       allowedKinds: ['dev_agent'],

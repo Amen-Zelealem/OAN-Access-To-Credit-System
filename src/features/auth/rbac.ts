@@ -198,6 +198,42 @@ export function readRoutingSession(token: string | undefined): RoutingSession {
   return { state: isExpired ? 'expired' : 'active', kind };
 }
 
+// Frappe role names, as the backend's `_classify_user_type` (oan_a2c/api/auth.py)
+// reads them. Same priority order: the bank-scoped roles first.
+const ROLE_KINDS: ReadonlyArray<readonly [string, UserKind]> = [
+  ['A2C Bank Admin', 'bank_admin'],
+  ['A2C Bank Agent', 'bank_agent'],
+  ['A2C Development Agent', 'dev_agent'],
+  ['A2C Administrator', 'marketplace'],
+  ['A2C Farmer', 'farmer'],
+];
+
+/**
+ * The user kind for a role list. For SSO (IAM) sessions only, with the roles
+ * `/v1/auth/me` returns: IAM tokens carry no `user_type` claim of ours.
+ * Returns null when no role belongs to this app.
+ */
+export function kindFromRoles(roles: ReadonlyArray<string>): UserKind | null {
+  return ROLE_KINDS.find(([role]) => roles.includes(role))?.[1] ?? null;
+}
+
+/**
+ * The kinds that may sign in through an IAM login option. Bank admins and bank
+ * agents sign in with this app's own username and password only.
+ */
+export const IAM_LOGIN_KINDS: ReadonlyArray<UserKind> = ['dev_agent', 'farmer'];
+
+/**
+ * `readRoutingSession` for an SSO session: `kind` is what the landing route
+ * stored from `/me`, `exp` the access token's expiry. An expired token is the
+ * normal state between renewals, exactly like a local session with a refresh
+ * token; the caller decides whether it can still be renewed.
+ */
+export function readIamRoutingSession(kind: UserKind | undefined, exp: number | null): RoutingSession {
+  if (!kind || !IAM_LOGIN_KINDS.includes(kind)) return NO_SESSION;
+  return { state: exp === null || exp * 1000 <= Date.now() ? 'expired' : 'active', kind };
+}
+
 // Reads the user_type claim for routing, REGARDLESS of token expiry.
 //
 // The access token's 15-min `exp` governs API-call validity, not login state —
