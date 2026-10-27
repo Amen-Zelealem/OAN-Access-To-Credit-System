@@ -63,7 +63,7 @@ describe('/api/auth/sso/complete', () => {
     const res = await complete({ login_option: AGENT, 'agent-X-Access-Token': TOKEN }, '/login/farmer');
 
     expect(res.status).toBe(303);
-    expect(res.headers.get('location')).toBe('http://localhost:3000/login/farmer?reason=sso_no_access');
+    expect(res.headers.get('location')).toBe('/login/farmer?reason=sso_no_access');
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
@@ -72,7 +72,7 @@ describe('/api/auth/sso/complete', () => {
 
     const res = await complete({ login_option: AGENT, 'agent-X-Access-Token': TOKEN });
 
-    expect(res.headers.get('location')).toBe('http://localhost:3000/login/development-agent?reason=sso_no_access');
+    expect(res.headers.get('location')).toBe('/login/development-agent?reason=sso_no_access');
   });
 
   it('reports a failed sign-in without login_option or token', async () => {
@@ -90,6 +90,6 @@ describe('/api/auth/sso/complete', () => {
   it('never goes back to a login page outside the SSO portals', async () => {
     const res = await complete({}, 'https://evil.example');
 
-    expect(res.headers.get('location')).toBe('http://localhost:3000/login/development-agent?reason=sso_failed');
+    expect(res.headers.get('location')).toBe('/login/development-agent?reason=sso_failed');
   });
 });

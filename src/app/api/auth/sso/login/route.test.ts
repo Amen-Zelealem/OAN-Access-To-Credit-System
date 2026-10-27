@@ -31,6 +31,17 @@ describe('/api/auth/sso/login', () => {
     vi.unstubAllGlobals();
   });
 
+  it('takes the landing origin from the browser, not the server bind address', async () => {
+    fetchMock.mockResolvedValue(
+      json(200, { data: { redirect_url: 'https://idp.example.org/auth', iam: 'agent', cookie_prefix: 'agent-' } })
+    );
+
+    await start(`key=agent&from=/login/farmer&origin=${encodeURIComponent('https://a2c.example.org')}`);
+
+    const [, init] = fetchMock.mock.calls[0]!;
+    expect(JSON.parse(init.body).return_url).toBe('https://a2c.example.org/api/auth/sso/complete?from=%2Flogin%2Ffarmer');
+  });
+
   it('starts the option with an absolute landing URL and records login_option', async () => {
     fetchMock.mockResolvedValue(
       json(200, { data: { redirect_url: 'https://idp.example.org/auth?x=1', iam: 'agent', cookie_prefix: 'agent-' } })
@@ -61,7 +72,7 @@ describe('/api/auth/sso/login', () => {
 
     const res = await start('key=agent&from=/login/farmer');
 
-    expect(res.headers.get('location')).toBe(`http://localhost:3000/login/farmer?reason=${reason}`);
+    expect(res.headers.get('location')).toBe(`/login/farmer?reason=${reason}`);
     expect(res.headers.getSetCookie().join('\n')).not.toContain('login_option=');
   });
 
@@ -70,7 +81,7 @@ describe('/api/auth/sso/login', () => {
 
     const res = await start('key=agent');
 
-    expect(res.headers.get('location')).toBe('http://localhost:3000/login/development-agent?reason=sso_failed');
+    expect(res.headers.get('location')).toBe('/login/development-agent?reason=sso_failed');
   });
 
   it('never starts the local option or a malformed key', async () => {

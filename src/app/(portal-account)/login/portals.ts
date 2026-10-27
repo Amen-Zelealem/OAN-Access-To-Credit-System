@@ -25,6 +25,10 @@ export interface PortalConfig {
    *  button each, and the password form below only when the list includes
    *  `local`. Its page loads the list (`listLoginProviders`). */
   iamLogin?: boolean;
+  /** Login option keys oan_auth_service uses for this portal's users; the first one
+   *  offered is the only button shown and the password form is hidden. When none is
+   *  offered the portal falls back to its password form. */
+  iamKeys?: readonly string[];
   form: PortalLoginFormProps;
 }
 
@@ -32,6 +36,7 @@ export const PORTALS: Record<PortalId, PortalConfig> = {
   farmer: {
     badge: 'Farmer Portal',
     iamLogin: true,
+    iamKeys: ['beneficiary'],
     form: {
       heading: 'Farmer Sign In',
       subtitle: 'Sign in to browse and apply for loans',
@@ -84,6 +89,7 @@ export const PORTALS: Record<PortalId, PortalConfig> = {
     // account holding the role (oan_a2c/api/auth.py,
     // require_sso_for_development_agents).
     iamLogin: true,
+    iamKeys: ['agent'],
     form: {
       subtitle: 'Coordinate field-level agricultural credit access across regions',
       allowedKinds: ['dev_agent'],
