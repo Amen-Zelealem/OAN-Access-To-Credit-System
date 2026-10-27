@@ -11,11 +11,10 @@ import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
 // Why `/api/auth/sso/*` sent the person back here (see lib/ssoRedirect.ts).
-// None of them echo server error text.
+// None of them echo server error text. `sso_unavailable`, `sso_failed` and
+// `sso_down` have no entry on purpose: the portal falls back to its password
+// form silently and the server logs the cause.
 const SSO_ERRORS: Record<string, string> = {
-  sso_unavailable: 'This sign-in method is not available.',
-  sso_failed: 'Sign-in failed. Please try again.',
-  sso_down: 'Sign-in is temporarily unavailable. Please try again shortly.',
   sso_no_access: 'Your account does not have access to this portal. Ask your administrator for access.',
   sso_token_too_large: 'Your account has too many roles to sign in here. Contact an administrator.',
 };
