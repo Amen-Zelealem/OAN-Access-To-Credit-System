@@ -5,7 +5,9 @@ import { Building2, Calendar, DollarSign, FileText, Loader2, Send, X } from 'luc
 import { useEffect, useState } from 'react';
 import { toast } from '@/lib/toast';
 import { logger } from '@/lib/logger';
-import { getApplication, submitApplication } from '../../api/farmerApi';
+import { formatDateTime } from '@/lib/format/dateTime';
+import { getApplication, getBankDetails, submitApplication } from '../../api/farmerApi';
+import { NO_VALUE } from '../../format';
 import { isDraftApplication, type FarmerLoanApplication } from '../../types';
 import { themeForApplication } from './ApplicationCard';
 
@@ -43,6 +45,7 @@ export default function ApplicationActionModal({
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [bankName, setBankName] = useState<string | null>(null);
 
   // Prefer the freshly fetched document over the row that opened the modal: the
   // bank may have moved the application on since the list was loaded.
@@ -78,6 +81,27 @@ export default function ApplicationActionModal({
       isMounted = false;
     };
   }, [isOpen, applicationId]);
+
+  // The application only carries the bank's ID (`PB-0035`). Resolve the name the
+  // farmer knows it by; until that arrives, or if the lookup fails, the ID is
+  // shown rather than nothing.
+  const bankId = details?.bank;
+  useEffect(() => {
+    if (!isOpen || !bankId) return;
+
+    let isMounted = true;
+    getBankDetails(bankId)
+      .then((res) => {
+        const name = res.data?.brand_name || res.data?.bank_name;
+        if (isMounted && name) setBankName(name);
+      })
+      .catch((err) => {
+        logger.warn('Failed to load bank name', { bankId, error: err });
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, bankId]);
 
   if (!isOpen) return null;
 
@@ -188,7 +212,7 @@ export default function ApplicationActionModal({
                     <Building2 className="w-4 h-4 text-gray-400" />
                     <div>
                       <span className="text-gray-400 block">Bank</span>
-                      <span className="font-semibold text-gray-800">{details.bank || '—'}</span>
+                      <span className="font-semibold text-gray-800">{bankName || details.bank || NO_VALUE}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -204,7 +228,7 @@ export default function ApplicationActionModal({
                     <Calendar className="w-4 h-4 text-gray-400" />
                     <div>
                       <span className="text-gray-400 block">Created On</span>
-                      <span className="font-semibold text-gray-800">{details.creation || subtitle}</span>
+                      <span className="font-semibold text-gray-800">{formatDateTime(details.creation)}</span>
                     </div>
                   </div>
                 </div>
