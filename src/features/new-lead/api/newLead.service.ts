@@ -202,8 +202,6 @@ const cleanId = (id: string): string => encodeURIComponent(normalizeLeadId(id));
 
 export const newLeadService = {
   async searchFarmer(faydaId: string): Promise<FarmerDetails> {
-    // The backend route is GET /v1/consent/farmers; a POST here is rejected
-    // as 405 before it reaches the handler.
     const response = await fetchApi(`v1/consent/farmers?fayda_id=${encodeURIComponent(faydaId)}`) as ApiResponse<SearchFarmerBackendData | null>;
 
     const payload = response.data;

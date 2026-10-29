@@ -72,11 +72,15 @@ export const onboardingService = {
   getKycDocumentUrl,
 
   async registerSeller(payload: RegisterSellerPayload): Promise<ApiResponse<{ message: string }>> {
-    // Public self-registration endpoint (guest-accessible). `role` is omitted so
-    // the backend applies its default (BANK_ADMIN_ROLE), matching this page's intent.
+    // Public self-registration endpoint (guest-accessible).
+    // Send role explicitly ('A2C Bank Admin') so registration assigns the role even if
+    // jwt_default_registration_role is unset in Frappe site_config.json.
     return fetchApi('v1/auth/register', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        ...payload,
+        role: payload.role || 'A2C Bank Admin',
+      }),
     }) as Promise<ApiResponse<{ message: string }>>;
   },
 

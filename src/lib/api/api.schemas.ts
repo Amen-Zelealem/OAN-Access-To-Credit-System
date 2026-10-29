@@ -399,7 +399,7 @@ export const registerSellerSchema = z.object({
   full_name: z.string().min(2, 'Full name must be at least 2 characters long.'),
   password: strongPasswordSchema,
   // Dial code + 9-10 local digits: the form validates the local part is
-  // exactly 10 digits (see PHONE_NUMBER_REGEX), then strips a leading trunk
+  // exactly 9 digits (see PHONE_NUMBER_REGEX), then strips a leading trunk
   // 0 before concatenating the country code (stripLeadingZero), so the
   // combined value is 9 or 10 digits after the code depending on whether
   // one was present. This is a defense-in-depth check on that combined value.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canAccess, isProtectedRoute, readRoutingSession } from './rbac';
+import { canAccess, isProtectedRoute, kindFromRoles, readIamRoutingSession, readRoutingSession } from './rbac';
 
 /** Builds an unsigned JWT-shaped token. Signature is never checked here. */
 function tokenWith(claims: Record<string, unknown>): string {
@@ -120,5 +120,27 @@ describe('canAccess: application lists', () => {
     expect(canAccess('bank_agent', '/application-lists')).toBe(false);
     expect(canAccess('dev_agent', '/application-lists')).toBe(false);
     expect(canAccess('farmer', '/application-lists')).toBe(false);
+  });
+});
+
+describe('SSO (IAM) sessions', () => {
+  it('maps roles to a user kind with the backend priority', () => {
+    expect(kindFromRoles(['A2C Development Agent'])).toBe('dev_agent');
+    expect(kindFromRoles(['A2C Development Agent', 'A2C Bank Admin'])).toBe('bank_admin');
+    expect(kindFromRoles(['Registry Operator'])).toBeNull();
+  });
+
+  it('reads an expired SSO token as expired, not as signed out', () => {
+    const past = Math.floor(Date.now() / 1000) - 60;
+
+    expect(readIamRoutingSession('dev_agent', past)).toEqual({ state: 'expired', kind: 'dev_agent' });
+    expect(readIamRoutingSession(undefined, past)).toEqual({ state: 'none', kind: null });
+  });
+
+  it('accepts only the kinds that sign in through IAM', () => {
+    const future = Math.floor(Date.now() / 1000) + 60;
+
+    expect(readIamRoutingSession('farmer', future)).toEqual({ state: 'active', kind: 'farmer' });
+    expect(readIamRoutingSession('bank_admin', future)).toEqual({ state: 'none', kind: null });
   });
 });

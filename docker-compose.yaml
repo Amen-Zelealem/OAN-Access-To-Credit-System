@@ -8,6 +8,6 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - API_BASE_URL=https://a2c-backend.oanstaging.com
+      - API_BASE_URL=${API_BASE_URL:?API_BASE_URL must be set in .env}
 
 volumes: {}

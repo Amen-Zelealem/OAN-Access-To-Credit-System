@@ -34,7 +34,7 @@ export default function FarmerSignupPage() {
     event.preventDefault();
     
     if (!PHONE_NUMBER_REGEX.test(phoneNumber)) {
-      setError('Phone number must be exactly 10 digits.');
+      setError('Phone number must be exactly 9 digits.');
       return;
     }
 
@@ -169,7 +169,7 @@ export default function FarmerSignupPage() {
                   inputMode="numeric"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(toDigitsOnly(e.target.value))}
-                  maxLength={10}
+                  maxLength={9}
                   placeholder="Enter phone number"
                   required
                   className="w-full px-4 py-3 bg-white border border-[#D1D5DB] rounded-r-xl text-[14px] text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-all placeholder:text-[#9CA3AF] font-medium"

@@ -10,6 +10,9 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { PORTALS } from '@/app/(portal-account)/login/portals';
+import type { LoginProvider } from '@/lib/loginOptions';
+
 /**
  * The role chooser: the one page every sign-out lands on.
  *
@@ -26,6 +29,8 @@ interface RoleChoice {
   iconColor: string;
   title: string;
   description: string;
+  /** IAM login option keys that sign this role in; the first one offered wins. */
+  iamKeys?: readonly string[] | undefined;
 }
 
 const ROLE_CHOICES: readonly RoleChoice[] = [
@@ -37,6 +42,7 @@ const ROLE_CHOICES: readonly RoleChoice[] = [
     iconColor: 'text-[#16A34A]',
     title: 'Farmer Applicant',
     description: 'Ethiopia OAN Farmer Portal',
+    iamKeys: PORTALS.farmer.iamKeys,
   },
   {
     id: 'bank',
@@ -55,6 +61,7 @@ const ROLE_CHOICES: readonly RoleChoice[] = [
     iconColor: 'text-orange-500',
     title: 'Development Agent',
     description: 'Support farmer outreach and data collection',
+    iamKeys: PORTALS['development-agent'].iamKeys,
   },
   {
     id: 'admin',
@@ -71,13 +78,28 @@ const ROLE_CHOICES: readonly RoleChoice[] = [
   },
 ];
 
-export function LoginForm() {
+export function LoginForm({ providers = null }: { providers?: LoginProvider[] | null }) {
   const router = useRouter();
   const [role, setRole] = useState(ROLE_CHOICES[0]!.id);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const handleSignInSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    router.push(ROLE_CHOICES.find((choice) => choice.id === role)?.href ?? '/');
+    const choice = ROLE_CHOICES.find((c) => c.id === role);
+    const href = choice?.href ?? '/';
+
+    // A role with an IAM login option skips the portal page and goes straight
+    // to the identity provider. The portal page stays the fallback when the
+    // option list could not be loaded or does not offer one for this role.
+    const key = choice?.iamKeys?.find((k) => providers?.some((p) => p.key === k));
+    if (key) {
+      setIsRedirecting(true);
+      // A route handler that redirects to the identity provider, not a page:
+      // router.push cannot follow it.
+      window.location.assign(`/api/auth/sso/login?${new URLSearchParams({ key, from: href, origin: window.location.origin })}`);
+      return;
+    }
+    router.push(href);
   };
 
   return (
@@ -138,9 +160,9 @@ export function LoginForm() {
       </div>
 
       <form className="w-full mb-10" onSubmit={handleSignInSubmit}>
-        <Button type="submit" size="none" className="w-full py-4 text-[14px] space-x-2 active:scale-[0.98]">
-          <span className="font-semibold">Next Step</span>
-          <ArrowRight size={18} strokeWidth={2.5} />
+        <Button type="submit" size="none" isLoading={isRedirecting} className="w-full py-4 text-[14px] space-x-2 active:scale-[0.98]">
+          <span className="font-semibold">{isRedirecting ? 'Redirecting…' : 'Next Step'}</span>
+          {!isRedirecting && <ArrowRight size={18} strokeWidth={2.5} />}
         </Button>
       </form>
 

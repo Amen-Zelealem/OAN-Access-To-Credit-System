@@ -24,8 +24,8 @@ const initialState: NotificationState = {
 
 export function getNotificationId(item: NotificationItem, fallbackIndex?: number): string {
   return (
+    item.id ||
     item.name ||
-    (item as { id?: string }).id ||
     (item as { notification_id?: string }).notification_id ||
     (fallbackIndex != null ? `notif-${fallbackIndex}` : '')
   );
@@ -124,17 +124,19 @@ export const notificationSlice = createSlice({
       // Mark Read (mutate on fulfilled)
       .addCase(markNotificationsRead.fulfilled, (state, action: PayloadAction<MarkReadParams>) => {
         const arg = action.payload;
-        if (arg.mark_all) {
+        const markAll = arg.all ?? arg.mark_all ?? false;
+        const targetIds = arg.ids ?? arg.notification_ids;
+        if (markAll) {
           state.items.forEach((item) => {
-            item.read = 1;
+            item.read = true;
           });
           state.unreadCount = 0;
-        } else if (arg.notification_ids?.length) {
-          const ids = new Set(arg.notification_ids);
+        } else if (targetIds?.length) {
+          const ids = new Set(targetIds);
           state.items.forEach((item) => {
             const id = getNotificationId(item);
             if (id && ids.has(id)) {
-              item.read = 1;
+              item.read = true;
             }
           });
           state.unreadCount = state.items.filter(isItemUnread).length;
@@ -146,11 +148,13 @@ export const notificationSlice = createSlice({
       // Clear Notifications (mutate on fulfilled)
       .addCase(clearNotifications.fulfilled, (state, action: PayloadAction<ClearNotificationsParams>) => {
         const arg = action.payload;
-        if (arg.clear_all) {
+        const clearAll = arg.all ?? arg.clear_all ?? false;
+        const targetIds = arg.ids ?? arg.notification_ids;
+        if (clearAll) {
           state.items = [];
           state.unreadCount = 0;
-        } else if (arg.notification_ids?.length) {
-          const ids = new Set(arg.notification_ids);
+        } else if (targetIds?.length) {
+          const ids = new Set(targetIds);
           state.items = state.items.filter((item) => {
             const id = getNotificationId(item);
             return !id || !ids.has(id);

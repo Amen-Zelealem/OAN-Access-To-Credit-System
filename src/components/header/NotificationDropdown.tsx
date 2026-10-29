@@ -42,17 +42,17 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isOp
   if (!isOpen) return null;
 
   const handleMarkAllRead = () => {
-    dispatch(markNotificationsRead({ mark_all: true }));
+    dispatch(markNotificationsRead({ all: true }));
   };
 
   const handleMarkSingleRead = (id: string) => {
-    dispatch(markNotificationsRead({ notification_ids: [id] }));
+    dispatch(markNotificationsRead({ ids: [id] }));
   };
 
   const handleClearSingle = (e: React.MouseEvent, id: string) => {
     e.preventDefault();
     e.stopPropagation();
-    dispatch(clearNotifications({ notification_ids: [id] }));
+    dispatch(clearNotifications({ ids: [id] }));
   };
 
   const getItemIcon = (subject?: string, content?: string) => {
@@ -144,7 +144,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isOp
                   isUnread ? 'bg-[#F0FDF4] hover:bg-[#DCFCE7]' : 'bg-white hover:bg-gray-50'
                 }`}
               >
-                {getItemIcon(item.subject, item.email_content)}
+                {getItemIcon(item.subject, (item.message || item.email_content) ?? undefined)}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <h4 className="text-sm font-bold text-gray-900 leading-snug">
@@ -165,16 +165,16 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isOp
                       </button>
                     </div>
                   </div>
-                  {item.email_content && (
+                  {(item.message || item.email_content) && (
                     <p className="text-xs text-gray-500 mt-1 line-clamp-2 leading-relaxed">
-                      {item.email_content.replace(/<[^>]*>?/gm, '')}
+                      {(item.message || item.email_content || '').replace(/<[^>]*>?/gm, '')}
                     </p>
                   )}
                   {item.document_name && (
                     <p className="text-xs text-gray-400 mt-1">{item.document_name}</p>
                   )}
                   <p className="text-[11px] text-gray-400 mt-1.5 font-medium">
-                    {formatTimestamp(item.creation)}
+                    {formatTimestamp(item.created_at || item.creation)}
                   </p>
                 </div>
               </div>
@@ -194,7 +194,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isOp
         </button>
         <button
           type="button"
-          onClick={() => dispatch(clearNotifications({ clear_all: true }))}
+          onClick={() => dispatch(clearNotifications({ all: true }))}
           className="text-emerald-600 hover:text-emerald-700 transition-colors cursor-pointer"
         >
           Clear all notifications

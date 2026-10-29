@@ -3,6 +3,7 @@ export interface RegisterSellerPayload {
   full_name: string;
   password: string;
   phone_number: string;
+  role?: string;
 }
 
 export interface SaveOrgContactsPayload {
