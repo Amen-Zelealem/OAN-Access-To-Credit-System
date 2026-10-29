@@ -9,9 +9,9 @@
   },
   "scripts": {
     "predev": "msw init public --save",
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "node init && next dev",
+    "build": "node init && next build",
+    "start": "node init && next start",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "organize-imports": "organize-imports-cli tsconfig.json",

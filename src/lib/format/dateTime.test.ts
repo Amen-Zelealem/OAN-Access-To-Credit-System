@@ -5,7 +5,6 @@ import { NO_VALUE } from './loanTerms';
 
 describe('formatDateTime', () => {
   it('renders an ISO timestamp as a readable date and time', () => {
-    // No offset, so it is read as local time and the result is timezone-stable.
     expect(formatDateTime('2026-10-15T21:27:40.373371')).toBe('Oct 15, 2026, 9:27 PM');
   });
 
