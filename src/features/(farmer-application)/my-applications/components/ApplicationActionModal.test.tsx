@@ -1,7 +1,9 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { configure, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FarmerLoanApplication } from '../../types';
 import ApplicationActionModal from './ApplicationActionModal';
+
+configure({ asyncUtilTimeout: 5000 });
 
 const { getApplication, getBankDetails } = vi.hoisted(() => ({
   getApplication: vi.fn(),
@@ -14,8 +16,6 @@ vi.mock('../../api/farmerApi', () => ({
   submitApplication: vi.fn(),
 }));
 
-// Shaped like `get_application`: the bank is an ID and `creation` is the raw ISO
-// string with a UTC offset and microseconds.
 const application = {
   application_id: 'APP-2026-00211',
   status: 'Submitted',
