@@ -58,7 +58,6 @@ internal/
 .settings
 **/.vs
 
-**/.vscode/*
 !**/.vscode/tasks.json
 !**/.vscode/settings.template.json
 !**/.vscode/launch.template.json
@@ -158,7 +157,6 @@ next-env.d.ts
 
 # End of https://www.toptal.com/developers/gitignore/api/nextjs,macos
 
-.env
 .claude
 CLAUDE.md
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
@@ -194,7 +192,6 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env*
 
 # vercel
 .vercel
@@ -202,3 +199,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+certificates
+config.bat
